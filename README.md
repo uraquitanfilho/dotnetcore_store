@@ -12,7 +12,7 @@ To this project was used:
 # Sections
 - [Initial](#initial)
 - [Domain](#domain)
-
+- [MVC - Category](#mvc - category)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -51,7 +51,7 @@ dotnet build
 ```
 
 ## Domain
-> **Commit** : []()
+> **Commit** : [fbe2d55](https://github.com/uraquitanfilho/dotnetcore_store/tree/fbe2d550725843f19a36e4ef8ee04dcff9017d66)
 > ## Let's create the Domains ## 
 
 1. Go to Project Folder **Store**:
@@ -264,3 +264,274 @@ namespace Store.Domain.Projects
 }
 ```
 
+## MVC - Category
+> **Commit** : []()
+> ## Let's create the MVC Project to WEB Interface. And will implement Category View ## 
+
+1. Go to folder: Store/src and lets create the MVC Project:
+```
+dotnet new mvc --name Store.Web
+```
+* delete the folder **lib** located at Store/src/Store.Web/wwwroot/lib
+
+* delete the file: Store/src/Store.Web/bundleconfig.json 
+_case your project comes with bower files, remove all_
+
+* Install the Yarn 
+_[What is Yarn?](https://code.facebook.com/posts/1840075619545360)_
+```
+npm install -g yarn
+```
+* Go to the folder **Store/src/Store.Web/** to create the package.json with command:
+```
+  yarn init
+```
+* Now, lets install some packages 
+```
+yarn add bootstrap@3.3.7 jquery jquery-validation jquery-validation-unobtrusive
+```
+_[What is GULP?](https://gulpjs.com/)_
+```
+yarn add gulp gulp-concat gulp-cssmin gulp-uncss browser-sync
+```
+* On the folder Store/src/Store.Web create the file **gulpfile.js**
+```javascript
+var gulp = require('gulp');
+var concat = require('gulp-concat');
+var cssmin = require('gulp-cssmin');
+var uncss = require('gulp-uncss');
+var browserSync = require('browser-sync').create();
+
+gulp.task('browser-sync', () => {
+  browserSync.init({
+      proxy: 'localhost:5000'
+  });
+
+  gulp.watch('./styles/**/*.css',['css']);
+  gulp.watch('./js/**/*.js',['js']);
+});
+
+gulp.task('js', () => {
+   
+    return gulp.src([
+          './node_modules/bootstrap/dist/js/bootstrap.min.js',
+          './node_modules/jquery/dist/jquery.min.js',
+          './node_modules/jquery-validation/dist/jquery.validate.min.js',
+          './node_modules/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js',
+          './js/site.js'
+        ])
+        .pipe(gulp.dest('wwwroot/js/'))
+        .pipe(browserSync.stream());
+});
+
+gulp.task('css', () => {
+
+    return gulp.src([
+        './styles/site.css',
+        './node_modules/bootstrap/dist/css/bootstrap.css',
+    ])
+    .pipe(concat('site.min.css'))
+    .pipe(cssmin())
+    .pipe(uncss({html: ["Views/**/*.cshtml"]}))
+    .pipe(gulp.dest('wwwroot/css'))
+    .pipe(browserSync.stream());
+});
+```
+* create 2 new folders on the path: **Store/src/Store.Web**
+```
+mkdir styles
+mkdir js
+```
+_Store/src/Store.Web/styles_
+_Store/src/Store.Web/js_
+
+* Move the file **site.css**: Store/src/Store.Web/wwwroot/css/site.css to Store/src/Store.Web/styles/site.css
+
+* Move the file **site.js**: Store/src/Store.Web/wwwroot/js/site.css to Store/src/Store.Web/js/site.js
+
+* Go to /Store/src/Store.Web and lets type the prompt command to generate the css and js
+```
+ yarn gulp css
+ yarn gulp js
+```
+* Now lets update the file: **Store/src/Store.Web/Views/Shared/_Layout.cshtml**
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Store.Web</title>
+    <link rel="stylesheet" href="~/css/site.min.css" />
+
+</head>
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">Store.Web</a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li><a asp-area="" asp-controller="Home" asp-action="About">About</a></li>
+                    <li><a asp-area="" asp-controller="Home" asp-action="Contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; 2018 - Store.Web</p>
+        </footer>
+    </div>
+
+    <environment include="Development">
+        <script src="~/js/jquery.min.js"></script>
+        <script src="~/js/bootstrap.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
+                asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
+                asp-fallback-test="window.jQuery"
+                crossorigin="anonymous"
+                integrity="sha384-K+ctZQ+LL8q6tP7I94W+qzQsfRV2a+AfHIi9k8z8l9ggpc8X+Ytst4yBo/hH+8Fk">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"
+                asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+                crossorigin="anonymous"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
+        </script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+```
+* Lets create the controller: **CategoryController.cs** at Store/src/Store.Web/Controllers
+
+```
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Store.Web.Models;
+
+namespace Store.Web.Controllers
+{
+    public class CategoryController : Controller
+    {
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult CreateOrEdit()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult CreateOrEdit(int id)
+        {
+            return View();
+        }
+    }
+}
+```
+
+* Create a folder called **Category** at: Store/src/Store.Web/Views
+* On the folder **Category** Create 2 Files:
+  - Index.cshtml
+```
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row header">
+    <div class="col-md-12">
+        <h3>Categories</h3>
+        <a href="/Category/CreateOrEdit" class="btn btn-primary">New</a>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-hover">
+            <tbody>
+                <tr>
+                    <td>
+                        <a class="name">Category 1</a>
+                    </td>
+                    <td>
+                        <a class="btn">Edit</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a class="name">Category 2</a>
+                    </td>
+                    <td>
+                        <a class="btn">Edit</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a class="name">Category 3</a>
+                    </td>
+                    <td>
+                        <a class="btn">Edit</a>
+                    </td>
+                </tr>                                
+            </tbody>
+        </table>
+    </div>
+</div>
+```
+_Static informations because we don't have database implementation **yet**_
+
+ - CreateOrEdit.cshtml
+```
+@model Store.Domain.ViewModels.CategoryViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row header">
+    <div class="co-md-12">
+        <h3>Category</h3>
+        <a href="/Category" class="btn btn-primary">Back</a>
+    </div>
+</div>
+<div class="row form-wrapper">
+    <div class="col-md-12">
+        <form id="form" class="form-horizontal" asp-action="CreateOrEdit" asp-controller="Category" asp-anti-forgery="">
+            <div class="form-group">
+                <label class="col-md-2 control-label">Name</label>
+                <div class="col-md-8">
+                    input class="form-control" asp-for="Name">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-8">
+                    <button class="btn btn-success">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div> 
+```
