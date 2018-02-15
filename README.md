@@ -14,6 +14,7 @@ To this project was used:
 - [Domain](#domain)
 - [MVC-Category](#mvc-category)
 - [Entity-Framework](#entity-framework)
+- [Migration](#migration)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -632,3 +633,25 @@ dotnet build
             services.AddMvc();
         }
 ```
+## Migration
+> **Commit** : []()
+> ## Let's start the migration configuration ##
+
+* Go to **Store/src/Store.Web/appsetings.json** to add the Connection String. _for this example we are using SQL SERVER 2017 express for linux_
+
+```
+{
+  "ConnectionStrings":{
+    "DefaultConnection": "Server=localhost;Database=storedb;User Id=your_login;Password=your_password;"
+  },
+  "Logging": {
+    "IncludeScopes": false,
+    "LogLevel": {
+      "Default": "Warning"
+    }
+  }
+}
+```
+_ps: change your_login and your_password_
+
+
