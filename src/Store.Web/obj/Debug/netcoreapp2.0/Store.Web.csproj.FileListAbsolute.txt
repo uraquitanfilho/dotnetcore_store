@@ -10,3 +10,7 @@
 /home/docker/projetos/aspnetcore/webapp/Store/src/Store.Web/obj/Debug/netcoreapp2.0/Store.Web.pdb
 /home/docker/projetos/aspnetcore/webapp/Store/src/Store.Web/bin/Debug/netcoreapp2.0/Store.DI.dll
 /home/docker/projetos/aspnetcore/webapp/Store/src/Store.Web/bin/Debug/netcoreapp2.0/Store.DI.pdb
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Web/bin/Debug/netcoreapp2.0/Store.Data.dll
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Web/bin/Debug/netcoreapp2.0/Store.Domain.dll
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Web/bin/Debug/netcoreapp2.0/Store.Domain.pdb
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Web/bin/Debug/netcoreapp2.0/Store.Data.pdb

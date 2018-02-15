@@ -654,4 +654,38 @@ dotnet build
 ```
 _ps: change your_login and your_password_
 
+* As we can see, the Store.Web has the connection String but any Entity Framework references. Than we need the bellow command to add migrations:
+  - go to **Store** folder to add the Store.Web project to application:
+  ```
+  dotnet sln add ./src/Store.Web/Store.Web.csproj
+  ``` 
+* Go to Store/src/Store.Web/Startup.cs and add the references:
+```c
+using Store.DI;
+```
+* Changes ConfigureServies method to.
+_ps: has an error: UpperCase the "C" Configuration.GetConection..._ 
+```
+        public void ConfigureServices(IServiceCollection services)
+        {
+            Bootstrap.Configure(services, Configuration.GetConnectionString("DefaultConnection"));
 
+            services.AddMvc();
+        }
+```
+* Lets do restore build
+```
+dotnet restore
+dotnet build
+```
+- Now we can go at **Store/src/Store.Data** folder and type the command to create the migration for Category
+```
+dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data.csproj migrations add AddCategory
+```
+* Now we need create the table on the SQL Server
+
+```
+dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data.csproj database update
+
+```
+* Great :) now the database **storedb** was created at SQL Server with a table called **categories**
