@@ -634,7 +634,7 @@ dotnet build
         }
 ```
 ## Migration
-> **Commit** : []()
+> **Commit** : [0203527](https://github.com/uraquitanfilho/dotnetcore_store/tree/0203527fc6642016816c3125e91efd3ae280b90e)
 > ## Let's start the migration configuration ##
 
 * Go to **Store/src/Store.Web/appsetings.json** to add the Connection String. _for this example we are using SQL SERVER 2017 express for linux_
