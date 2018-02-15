@@ -4746,6 +4746,19 @@
         "runtime": {
           "lib/netstandard1.3/Microsoft.WindowsAzure.Storage.dll": {}
         }
+      },
+      "Store.DI/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.0",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection": "2.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Store.DI.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Store.DI.dll": {}
+        }
       }
     }
   },
@@ -12526,12 +12539,18 @@
         "windowsazure.storage.8.1.4.nupkg.sha512",
         "windowsazure.storage.nuspec"
       ]
+    },
+    "Store.DI/1.0.0": {
+      "type": "project",
+      "path": "../Store.DI/Store.DI.csproj",
+      "msbuildProject": "../Store.DI/Store.DI.csproj"
     }
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v2.0": [
       "Microsoft.AspNetCore.All >= 2.0.5",
-      "Microsoft.NETCore.App >= 2.0.0"
+      "Microsoft.NETCore.App >= 2.0.0",
+      "Store.DI >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -12561,7 +12580,11 @@
       },
       "frameworks": {
         "netcoreapp2.0": {
-          "projectReferences": {}
+          "projectReferences": {
+            "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.DI/Store.DI.csproj": {
+              "projectPath": "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.DI/Store.DI.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

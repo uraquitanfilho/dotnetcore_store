@@ -1,0 +1,10 @@
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/bin/Debug/netstandard2.0/Store.Data.deps.json
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/bin/Debug/netstandard2.0/Store.Data.dll
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/bin/Debug/netstandard2.0/Store.Data.pdb
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/bin/Debug/netstandard2.0/Store.Domain.dll
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/bin/Debug/netstandard2.0/Store.Domain.pdb
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/obj/Debug/netstandard2.0/Store.Data.csproj.CoreCompileInputs.cache
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/obj/Debug/netstandard2.0/Store.Data.AssemblyInfoInputs.cache
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/obj/Debug/netstandard2.0/Store.Data.AssemblyInfo.cs
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/obj/Debug/netstandard2.0/Store.Data.dll
+/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Data/obj/Debug/netstandard2.0/Store.Data.pdb

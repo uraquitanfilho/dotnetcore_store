@@ -13,6 +13,7 @@ To this project was used:
 - [Initial](#initial)
 - [Domain](#domain)
 - [MVC - Category](#mvc - category)
+- [Entity Framework](#entity framework)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -356,7 +357,7 @@ _Store/src/Store.Web/js_
 ```
 * Now lets update the file: **Store/src/Store.Web/Views/Shared/_Layout.cshtml**
 
-```
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -422,7 +423,7 @@ _Store/src/Store.Web/js_
 ```
 * Lets create the controller: **CategoryController.cs** at Store/src/Store.Web/Controllers
 
-```
+```c
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -457,7 +458,7 @@ namespace Store.Web.Controllers
 * Create a folder called **Category** at: Store/src/Store.Web/Views
 * On the folder **Category** Create 2 Files:
   - Index.cshtml
-```
+```html
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -504,7 +505,7 @@ namespace Store.Web.Controllers
 _Static informations because we don't have database implementation **yet**_
 
  - CreateOrEdit.cshtml
-```
+```html
 @model Store.Domain.ViewModels.CategoryViewModel
 
 @{
@@ -534,4 +535,100 @@ _Static informations because we don't have database implementation **yet**_
         </form>
     </div>
 </div> 
+```
+## Entity Framework
+> **Commit** : []()
+> ## SQL Server Data Persistence using Entity Framework ## 
+
+* Goto Store/src/ to create the Data Project
+```
+dotnet new classlib --name Store.Data
+```
+* remove **Classe1.cs** at /Store/src/Store.Data/
+
+* add references to Store.Data access Store.Domain
+```
+dotnet add Store.Data/Store.Data.csproj reference Store.Domain/Store.Domain.csproj
+```
+* go to /Store folder to references Data to Project
+```
+dotnet sln add src/Store.Data/Store.Data.csproj
+dotnet restore
+dotnet build
+```
+* Go to /Store/src/Store.Data to create the context class called: **ApplicationDbContext.cs**
+
+* Let's ADD Entity Framework References:
+```
+dotnet add package Microsoft.EntityFrameworkCore
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+```
+* Add on the file: /Core/app/Core.Data/Core.Data.csproj
+```xml
+  <ItemGroup>
+    <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.1" />
+  </ItemGroup>
+```
+
+* Let's create a new project to dependence injector
+```
+dotnet new classlib --name Store.DI
+
+dotnet restore
+dotnet build
+```
+* Go to Store folder to add new project to solution
+```
+dotnet sln add src/Store.DI/Store.DI.csproj
+```
+* Rename the class Store/src/Store.DI/Class1.cs to Bootstrap.cs
+```
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Data;
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options =>
+              options.UseSqlServer(connection));
+        }
+    }
+}
+```
+
+* go to folder: /Store/src/Store.DI/ to add a new package:
+
+```
+dotnet add package Microsoft.Extensions.DependencyInjection
+dotnet add package Microsoft.EntityFrameworkCore
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer.Design
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+dotnet add package Microsoft.EntityFrameworkCore.Design
+
+dotnet add Store.DI.csproj reference ../Store.Data/Store.Data.csproj
+
+dotnet restore
+dotnet build
+```
+* Now go to folder: /Stpre/src/Store.Web to references the DI to Web Project.
+```
+dotnet add Store.Web.csproj reference ../Store.DI/Store.DI.csproj
+dotnet restore
+dotnet build
+```
+* Go to Store/src/Store.Web/Startup.cs 
+> On the ConfigureServices Method:
+
+```c
+        public void ConfigureServices(IServiceCollection services)
+        {
+            Bootstrap.Configure(services, configuration.GetConnectionString("DefaultConnection"));    
+            services.AddMvc();
+        }
 ```
