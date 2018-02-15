@@ -12,8 +12,8 @@ To this project was used:
 # Sections
 - [Initial](#initial)
 - [Domain](#domain)
-- [MVC - Category](#mvc - category)
-- [Entity Framework](#entity framework)
+- [MVC-Category](#mvc-category)
+- [Entity-Framework](#entity-framework)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -265,7 +265,7 @@ namespace Store.Domain.Projects
 }
 ```
 
-## MVC - Category
+## MVC-Category
 > **Commit** : [915318e](https://github.com/uraquitanfilho/dotnetcore_store/tree/915318eed36801d3c43bea8669ad6681728dca90)
 > ## Let's create the MVC Project to WEB Interface. And will implement Category View ## 
 
@@ -536,8 +536,8 @@ _Static informations because we don't have database implementation **yet**_
     </div>
 </div> 
 ```
-## Entity Framework
-> **Commit** : []()
+## Entity-Framework
+> **Commit** : [18d69b8](https://github.com/uraquitanfilho/dotnetcore_store/tree/18d69b85e352d1f2582276a90c9207397cf0e35e#domain)
 > ## SQL Server Data Persistence using Entity Framework ## 
 
 * Goto Store/src/ to create the Data Project
