@@ -12645,7 +12645,8 @@
     ".NETCoreApp,Version=v2.0": [
       "Microsoft.AspNetCore.All >= 2.0.5",
       "Microsoft.NETCore.App >= 2.0.0",
-      "Store.DI >= 1.0.0"
+      "Store.DI >= 1.0.0",
+      "Store.Domain >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -12678,6 +12679,9 @@
           "projectReferences": {
             "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.DI/Store.DI.csproj": {
               "projectPath": "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.DI/Store.DI.csproj"
+            },
+            "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Domain/Store.Domain.csproj": {
+              "projectPath": "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Domain/Store.Domain.csproj"
             }
           }
         }

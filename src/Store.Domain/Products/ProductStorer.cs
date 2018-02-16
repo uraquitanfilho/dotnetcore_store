@@ -1,6 +1,6 @@
 using Store.Domain.Dtos;
 
-namespace Store.Domain.Projects
+namespace Store.Domain.Products
 {
     public class ProductStorer
     {

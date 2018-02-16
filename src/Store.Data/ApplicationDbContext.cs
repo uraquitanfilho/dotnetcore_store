@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Store.Domain.Projects;
+using Store.Domain.Products;
 
 namespace Store.Data
 {

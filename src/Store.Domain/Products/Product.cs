@@ -1,4 +1,4 @@
-namespace Store.Domain.Projects
+namespace Store.Domain.Products
 {
     public class Product
     {

@@ -15,6 +15,7 @@ To this project was used:
 - [MVC-Category](#mvc-category)
 - [Entity-Framework](#entity-framework)
 - [Migration](#migration)
+- [Settings-DI](#settings-di)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -89,7 +90,7 @@ namespace Store.Domain
 
 4. On the folder src/Store.Domain/Products create a class called: **Category.cs**
 ```c
-namespace Store.Domain.Projects
+namespace Store.Domain.Products
 {
     public class Category
     {
@@ -116,7 +117,7 @@ namespace Store.Domain.Projects
 ```
 5. On the folder src/Store.Domain/Products create a class called: **Product.cs**
 ```c
-namespace Store.Domain.Projects
+namespace Store.Domain.Products
 {
     public class Product
     {
@@ -179,7 +180,7 @@ namespace Store.Domain.Dtos
 }
 ```
 7. Goto /src/Store.Domain and create an interface called: **IRepository.cs**
-```
+```c
 namespace Store.Domain
 {  
     public interface IRepository<TEntity>
@@ -189,12 +190,12 @@ namespace Store.Domain
     }
 }
 ```
-8. Go to src/Store.Domain/Projects and create a file called: **ProductStorer.cs**
+8. Go to src/Store.Domain/Products and create a file called: **ProductStorer.cs**
 
-```
+```c
 using Store.Domain.Dtos;
 
-namespace Store.Domain.Projects
+namespace Store.Domain.Products
 {
     public class ProductStorer
     {
@@ -226,7 +227,7 @@ namespace Store.Domain.Projects
 
 8. Lets do same to Category. 
 Go to src/Store.Domain/Dtos and create a class called: CategoryDto.cs
-```
+```c
 namespace Store.Domain.Dtos
 {
     public class CategoryDto
@@ -237,11 +238,11 @@ namespace Store.Domain.Dtos
 }
 ```
 
-Go to src/Store.Domain/Projects and create a file called: **CategoryStorer.cs**
-```
+Go to src/Store.Domain/Products and create a file called: **CategoryStorer.cs**
+```c
 using Store.Domain.Dtos;
 
-namespace Store.Domain.Projects
+namespace Store.Domain.Products
 {
     public class CategoryStorer
     {
@@ -584,7 +585,7 @@ dotnet build
 dotnet sln add src/Store.DI/Store.DI.csproj
 ```
 * Rename the class Store/src/Store.DI/Class1.cs to Bootstrap.cs
-```
+```c
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -665,7 +666,7 @@ using Store.DI;
 ```
 * Changes ConfigureServies method to.
 _ps: has an error: UpperCase the "C" Configuration.GetConection..._ 
-```
+```c
         public void ConfigureServices(IServiceCollection services)
         {
             Bootstrap.Configure(services, Configuration.GetConnectionString("DefaultConnection"));
@@ -689,3 +690,195 @@ dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data
 
 ```
 * Great :) now the database **storedb** was created at SQL Server with a table called **categories**
+
+## Settings-DI
+> **Commit** : []()
+> ## Now it's the time to adjust the Direct Injection ## 
+
+* Lets Edit the file: Store/src/Store.Web/Store.Web.csproj
+```xml
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Store.DI\Store.DI.csproj" />
+    <ProjectReference Include="..\Store.Domain\Store.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
+```
+* Let's do a restore /build on the project
+```
+dotnet restore
+dotnet build
+```
+* Edit the class: **Store/src/Core.Web/Controllers/CategoryController.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain.Dtos;
+using Store.Web.Models;
+
+namespace Store.Web.Controllers
+{
+    public class CategoryController : Controller
+    {
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult CreateOrEdit()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult CreateOrEdit(CategoryDto dto)
+        {
+            return View();
+        }
+    }
+}
+```
+* Go to **Store/src/Store.Domain** and let's create a class called: **Entity.cs**
+```c
+namespace Store.Domain
+{
+    public class Entity
+    {
+        public int Id {get; protected set;}
+    }
+}
+```
+* Let's edit the class **Store/src/Store.Domain/Category.cs**
+```c
+namespace Store.Domain.Products
+{
+    public class Category : Entity
+    {
+        public string Name { get; private set; }
+
+        public Category(string name)
+        {
+            ValidateAndSetName(name);
+        }
+
+        public void Update(string name) 
+        {
+            ValidateAndSetName(name);
+        }
+        private void ValidateAndSetName(string name)
+        {
+            DomainException.When(string.IsNullOrEmpty(name), "Name is required");
+            Name = name;
+        }
+    }
+}
+```
+* Go to **Store/src/Store.Data** and let's create a class called: **Repository.cs**
+```c
+using Store.Domain;
+using System.Linq;
+namespace Store.Data
+{
+    public class Repository<TEntity> : IRepository<TEntity> where TEntity: Entity
+    {
+        private readonly ApplicationDbContext _context;
+
+        public Repository(ApplicationDbContext context) {
+            _context = context;
+        }
+        public TEntity GetById(int id) {
+           return _context.Set<TEntity>().SingleOrDefault(e => e.Id == id);
+        }
+        public void Save(TEntity entity) {
+           _context.Set<TEntity>().Add(entity);
+        }
+    }
+}
+```
+* Edit the class: **Store/src/Store.DI/Bootstrap.cs**
+> We need now make the injection
+```c
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Data;
+using Store.Domain;
+using Store.Domain.Products;
+
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options =>
+              options.UseSqlServer(connection));
+            //Generic Injection
+            services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(CategoryStorer));
+        }
+    }
+}
+```
+*Finally for this section edit the class **Store/src/Store.Web/Controllers/CategoryController.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain.Dtos;
+using Store.Domain.Products;
+using Store.Web.Models;
+
+namespace Store.Web.Controllers
+{
+    public class CategoryController : Controller
+    {
+        private readonly CategoryStorer _categoryStorer;
+
+        public CategoryController(CategoryStorer categoryStorer) {
+            _categoryStorer = categoryStorer;
+        }
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult CreateOrEdit()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult CreateOrEdit(CategoryDto dto)
+        {
+            return View();
+        }
+    }
+}
+
+```
+* Now you can build the project 
+```
+dotnet build
+```
