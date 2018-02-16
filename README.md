@@ -16,6 +16,7 @@ To this project was used:
 - [Entity-Framework](#entity-framework)
 - [Migration](#migration)
 - [Settings-DI](#settings-di)
+- [Saving-Category](#saving-category)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -872,13 +873,273 @@ namespace Store.Web.Controllers
         [HttpPost]
         public IActionResult CreateOrEdit(CategoryDto dto)
         {
+            _categoryStorer.Store(dto);
             return View();
         }
     }
 }
+
 
 ```
 * Now you can build the project 
 ```
 dotnet build
 ```
+## Saving-Category
+> **Commit** : []()
+> ## In this section we will save on the database the Category ## 
+
+_ps: To debug on visual studio code_
+* edit the file **.vscode/lanuch.json**
+> On the section "configurations" edit:
+```javascript
+"program": "${workspaceRoot}/src/Store.Web/bin/Debug/netcoreapp2.0/Store.Web.dll",
+"cwd": "${workspaceRoot}/src/Store.Web",
+```
+###
+* Edit **src/Store.DI/Bootstrap.cs**
+```c
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Data;
+using Store.Domain;
+using Store.Domain.Products;
+
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options =>
+              options.UseSqlServer(connection));
+            //Generic Injection
+            services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(CategoryStorer));
+            services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
+        }
+    }
+}
+```
+* Edit **src/Store.Data/Repository.cs**
+
+```c
+using System.Linq;
+using Store.Domain;
+
+namespace Store.Data
+{
+    public class Repository<TEntity> : IRepository<TEntity> where TEntity: Entity
+    {
+        private readonly ApplicationDbContext _context;
+
+        public Repository(ApplicationDbContext context) {
+            _context = context;
+        }
+        public TEntity GetById(int id) {
+           var query = _context.Set<TEntity>().Where(e => e.Id == id);
+           if(query.Any())
+             return query.First();
+           return null;  
+        }
+        public void Save(TEntity entity) {
+           _context.Set<TEntity>().Add(entity);
+        }
+    }
+}
+```
+* Create an interface called **src/Store.Domain/IUnitOfWork.cs**
+```c
+using System.Threading.Tasks;
+
+namespace Store.Domain
+{
+    public interface IUnitOfWork
+    {
+        Task Commit();
+    }
+}
+```
+
+* Create a class called **src/Store.Data/UnitOfWork.cs**
+```c
+using System.Threading.Tasks;
+using Store.Domain;
+
+namespace Store.Data
+{
+    public class UnitOfWork : IUnitOfWork
+    {
+        private readonly ApplicationDbContext _context;
+
+        public UnitOfWork(ApplicationDbContext context) {
+            _context = context;
+        }
+
+        public async Task Commit() {
+            await _context.SaveChangesAsync();
+        }
+    }
+}
+```
+* Edit the class **src/Store.Domain/DomainException.cs**
+```c
+using System;
+
+namespace Store.Domain
+{
+    public class DomainException : Exception
+    {
+        public DomainException(string error): base(error) {
+
+        }
+
+        public static void When(bool hasError, string error) {
+            if(hasError)
+              throw new DomainException(error);
+        }
+        
+    }
+}
+```
+* edit the class **src/Store.Web/Controllers/CategoryController.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain.Dtos;
+using Store.Domain.Products;
+using Store.Web.Models;
+
+namespace Store.Web.Controllers
+{
+    public class CategoryController : Controller
+    {
+        private readonly CategoryStorer _categoryStorer;
+
+        public CategoryController(CategoryStorer categoryStorer) {
+            _categoryStorer = categoryStorer;
+        }
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult CreateOrEdit()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult CreateOrEdit(CategoryDto dto)
+        {
+            _categoryStorer.Store(dto);
+            return View();
+        }
+    }
+}
+```
+* Edit the class **src/Store.Web/Startup.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Store.DI;
+using Store.Domain;
+
+namespace Store.Web
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            Bootstrap.Configure(services, Configuration.GetConnectionString("DefaultConnection"));
+
+            services.AddMvc();
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        {
+            app.Use(async(context, next) => 
+            {
+              await next.Invoke();
+              var unitOfWork = (IUnitOfWork)context.RequestServices.GetService(typeof(IUnitOfWork));
+              await unitOfWork.Commit();
+            });            
+            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+            loggerFactory.AddDebug();
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+            }
+
+            app.UseStaticFiles();
+
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Home}/{action=Index}/{id?}");
+            });
+        }
+    }
+}
+```
+* Edit the html file **src/Store.Web/Views/Category/CreateOrEdit.cshtml**
+```html
+@model Store.Domain.Products.Category
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row header">
+    <div class="co-md-12">
+        <h3>Category</h3>
+        <a href="/Category" class="btn btn-primary">Back</a>
+    </div>
+</div>
+<div class="row form-wrapper">
+    <div class="col-md-12">
+        <form id="form" class="form-horizontal" asp-action="CreateOrEdit" asp-controller="Category" asp-anti-forgery="">
+            <div class="form-group">
+                <label class="col-md-2 control-label">Name</label>
+                <div class="col-md-8">
+                    <input class="form-control" asp-for="Name">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-8">
+                    <button class="btn btn-success">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+```
+
+

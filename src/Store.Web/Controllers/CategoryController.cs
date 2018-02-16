@@ -30,6 +30,7 @@ namespace Store.Web.Controllers
         [HttpPost]
         public IActionResult CreateOrEdit(CategoryDto dto)
         {
+            _categoryStorer.Store(dto);
             return View();
         }
     }
