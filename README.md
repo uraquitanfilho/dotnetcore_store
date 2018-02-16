@@ -692,7 +692,7 @@ dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data
 * Great :) now the database **storedb** was created at SQL Server with a table called **categories**
 
 ## Settings-DI
-> **Commit** : []()
+> **Commit** : [1a35c46](https://github.com/uraquitanfilho/dotnetcore_store/tree/1a35c46365039e31867d323153efd0526dfa4dda)
 > ## Now it's the time to adjust the Direct Injection ## 
 
 * Lets Edit the file: Store/src/Store.Web/Store.Web.csproj
