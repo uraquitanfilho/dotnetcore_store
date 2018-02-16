@@ -7,6 +7,13 @@ To this project was used:
 - [.NET Core SDK 2.1.4](https://www.microsoft.com/net/download)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
+> Visual Studio Code Extensions
+_:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press enter._
+* ext install ms-vscode.csharp
+* ext install jchannon.csharpextensions
+* ext install ms-vscode.cpptools
+* ext install DavidAnson.vscode-markdownlint
+
 *ps: This example will same work for MAC | Win | Linux*
 
 # Sections
@@ -886,7 +893,7 @@ namespace Store.Web.Controllers
 dotnet build
 ```
 ## Saving-Category
-> **Commit** : []()
+> **Commit** : [f296f7e](https://github.com/uraquitanfilho/dotnetcore_store/tree/f296f7ed6998c6d7bbd142a90340599970de64f9)
 > ## In this section we will save on the database the Category ## 
 
 _ps: To debug on visual studio code_
