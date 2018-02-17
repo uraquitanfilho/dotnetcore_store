@@ -1295,7 +1295,7 @@ namespace Store.Domain.Products
 }
 ```
 ## Domain Exception
-> **Commit** : []()
+> **Commit** : [7ba3156](https://github.com/uraquitanfilho/dotnetcore_store/tree/7ba31560d372fd9de8643162962ee698adc8d336)
 
 * Create a new folder in the **Store.Web** called **Filters**
 * Create a class called: **Store.Web/Filters/CustomExceptionFilter.cs**
