@@ -1,5 +1,3 @@
-using Store.Domain.Dtos;
-
 namespace Store.Domain.Products
 {
     public class CategoryStorer
@@ -11,15 +9,15 @@ namespace Store.Domain.Products
            _categoryRepository = categoryRepository;
         }
 
-        public void Store(CategoryDto dto) {
-            var category = _categoryRepository.GetById(dto.Id);
+        public void Store(int id, string name) {
+            var category = _categoryRepository.GetById(id);
 
             if(category == null) {
-                category = new Category(dto.Name);
+                category = new Category(name);
                 _categoryRepository.Save(category);
             }
             else 
-              category.Update(dto.Name);
+              category.Update(name);
         }  
     }
 }

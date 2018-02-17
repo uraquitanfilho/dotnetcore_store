@@ -177,7 +177,7 @@
     ]
   },
   "packageFolders": {
-    "/home/abutre/.nuget/packages/": {},
+    "/root/.nuget/packages/": {},
     "/usr/share/dotnet/sdk/NuGetFallbackFolder": {}
   },
   "project": {
@@ -186,14 +186,14 @@
       "projectUniqueName": "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Domain/Store.Domain.csproj",
       "projectName": "Store.Domain",
       "projectPath": "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Domain/Store.Domain.csproj",
-      "packagesPath": "/home/abutre/.nuget/packages/",
+      "packagesPath": "/root/.nuget/packages/",
       "outputPath": "/home/docker/projetos/aspnetcore/webapp/Store/src/Store.Domain/obj/",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "/usr/share/dotnet/sdk/NuGetFallbackFolder"
       ],
       "configFilePaths": [
-        "/home/abutre/.nuget/NuGet/NuGet.Config"
+        "/root/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "netstandard2.0"

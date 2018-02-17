@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Store.Domain.Dtos;
 using Store.Domain.Products;
 using Store.Web.Models;
+using Store.Web.ViewsModels;
 
 namespace Store.Web.Controllers
 {
@@ -28,9 +28,9 @@ namespace Store.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateOrEdit(CategoryDto dto)
+        public IActionResult CreateOrEdit(CategoryViewModel viewModel)
         {
-            _categoryStorer.Store(dto);
+            _categoryStorer.Store(viewModel.Id, viewModel.Name);
             return View();
         }
     }

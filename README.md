@@ -24,6 +24,7 @@ _:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press ent
 - [Migration](#migration)
 - [Settings-DI](#settings-di)
 - [Saving-Category](#saving-category)
+- [Form Validation](#form-validation)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -1148,5 +1149,36 @@ namespace Store.Web
     </div>
 </div>
 ```
+## Form Validation
+> **Commit** : []()
+> ## Let's resolve the CustomException ##
+
+* Edit **Store/src/Core.Domain/Category.cs** 
+```c
+namespace Store.Domain.Products
+{
+    public class Category : Entity
+    {
+        public string Name { get; private set; }
+
+        public Category(string name)
+        {
+            ValidateAndSetName(name);
+        }
+
+        public void Update(string name) 
+        {
+            ValidateAndSetName(name);
+        }
+        private void ValidateAndSetName(string name)
+        {
+            DomainException.When(string.IsNullOrEmpty(name), "Name is required");
+            DomainException.When(name.Length < 3, "Invalid Category");
+            Name = name;
+        }
+    }
+}
+```
+* Edit Store/src/Core.Web/Dtos/CategoryDto.cs
 
 
