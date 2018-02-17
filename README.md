@@ -1944,7 +1944,7 @@ dotnet build
 ```
 
 ## Sale
-> **Commit** : []()
+> **Commit** : [2b7542a](https://github.com/uraquitanfilho/dotnetcore_store/tree/2b7542a9b32677bb07ac31d4e35ee021bb7d6519)
 
 * create a class called: **Store.Web/Controllers/SaleController.cs**
 ```c
