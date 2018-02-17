@@ -26,7 +26,7 @@ _:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press ent
 - [Saving-Category](#saving-category)
 - [Form Validation](#form-validation)
 - [Domain Exception](#domain-exception)
-
+- [Category Crud Finish](#category-crud-finish)
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
 > ## Let's create the project ## 
@@ -1520,5 +1520,140 @@ function formOnFail(error){
 yarn add jquery-ajax-unobtrusive
 ```
 * copy from node_modules and paste on the folder **wwwroot/js/jquery.unobtrusive-ajax.min.js**
+
+## Category Crud Finish
+> **Commit** : []()
+
+* Edit **Controllers/CategoryController.cs**
+
+```c
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain;
+using Store.Domain.Products;
+
+using Store.Web.ViewsModels;
+
+namespace Store.Web.Controllers
+{
+    public class CategoryController : Controller
+    {
+        private readonly CategoryStorer _categoryStorer;
+        private readonly IRepository<Category> _categoryRepository;
+        public CategoryController(CategoryStorer categoryStorer,
+                IRepository<Category> categoryRepository) 
+        {
+            _categoryStorer = categoryStorer;
+            _categoryRepository = categoryRepository;
+        }
+        public IActionResult Index()
+        {
+            var categories = _categoryRepository.All();
+            var viewsModels = categories.Select( c => new CategoryViewModel{ Id = c.Id, Name = c.Name });
+
+            return View(viewsModels);
+        }
+
+        public IActionResult CreateOrEdit(int id)
+        {
+            if(id > 0) {
+                var category = _categoryRepository.GetById(id);
+                var categoryViewModel = new CategoryViewModel{Id = category.Id, Name = category.Name};
+                return View(categoryViewModel);
+            } else return View();
+        }
+
+        [HttpPost]
+        public IActionResult CreateOrEdit(CategoryViewModel viewModel)
+        {
+            _categoryStorer.Store(viewModel.Id, viewModel.Name);
+            return RedirectToAction("Index");
+        }
+    }
+}
+```
+
+* Edit **Views/Category/Index.cshtml**
+```c
+@model IEnumerable<Store.Web.ViewsModels.CategoryViewModel>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row header">
+    <div class="col-md-12">
+        <h3>Categories</h3>
+        <a href="/Category/CreateOrEdit" class="btn btn-primary">New</a>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-hover">
+            <tbody>
+               @foreach(var viewModel in @Model) {
+                    <tr>
+                        <td>
+                            <a class="name">@viewModel.Name</a>
+                        </td>
+                        <td>
+                            <a href="/Category/CreateOrEdit/@viewModel.Id" class="btn">Edit</a>
+                        </td>
+                    </tr>
+               }
+            </tbody>
+        </table>
+    </div>
+</div>
+```
+* Edit **/Store.Data/Repository.cs**
+
+```c
+using System.Collections.Generic;
+using System.Linq;
+using Store.Domain;
+
+namespace Store.Data
+{
+    public class Repository<TEntity> : IRepository<TEntity> where TEntity: Entity
+    {
+        private readonly ApplicationDbContext _context;
+
+        public Repository(ApplicationDbContext context) {
+            _context = context;
+        }
+
+        public IEnumerable<TEntity> All() {
+            return _context.Set<TEntity>().AsEnumerable();
+        }
+
+        public TEntity GetById(int id) {
+           var query = _context.Set<TEntity>().Where(e => e.Id == id);
+           if(query.Any())
+             return query.First();
+           return null;  
+        }
+        public void Save(TEntity entity) {
+           _context.Set<TEntity>().Add(entity);
+        }
+    }
+}
+```
+Edit **/Store.Domain/IRepository.cs**
+```c
+using System.Collections.Generic;
+
+namespace Store.Domain
+{  
+    public interface IRepository<TEntity>
+    {
+        TEntity GetById(int id);
+       IEnumerable<TEntity> All();
+        void Save(TEntity entity);
+    }
+}
+```
 
 

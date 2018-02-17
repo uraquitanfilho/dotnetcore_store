@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Store.Domain;
 using Store.Domain.Products;
-using Store.Web.Models;
+
 using Store.Web.ViewsModels;
 
 namespace Store.Web.Controllers
@@ -13,25 +13,35 @@ namespace Store.Web.Controllers
     public class CategoryController : Controller
     {
         private readonly CategoryStorer _categoryStorer;
-
-        public CategoryController(CategoryStorer categoryStorer) {
+        private readonly IRepository<Category> _categoryRepository;
+        public CategoryController(CategoryStorer categoryStorer,
+                IRepository<Category> categoryRepository) 
+        {
             _categoryStorer = categoryStorer;
+            _categoryRepository = categoryRepository;
         }
         public IActionResult Index()
         {
-            return View();
+            var categories = _categoryRepository.All();
+            var viewsModels = categories.Select( c => new CategoryViewModel{ Id = c.Id, Name = c.Name });
+
+            return View(viewsModels);
         }
 
-        public IActionResult CreateOrEdit()
+        public IActionResult CreateOrEdit(int id)
         {
-            return View();
+            if(id > 0) {
+                var category = _categoryRepository.GetById(id);
+                var categoryViewModel = new CategoryViewModel{Id = category.Id, Name = category.Name};
+                return View(categoryViewModel);
+            } else return View();
         }
 
         [HttpPost]
         public IActionResult CreateOrEdit(CategoryViewModel viewModel)
         {
             _categoryStorer.Store(viewModel.Id, viewModel.Name);
-            return View();
+            return RedirectToAction("Index");
         }
     }
 }
