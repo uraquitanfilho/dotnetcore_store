@@ -1,0 +1,15 @@
+{
+  "name": "Store",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/uraquitanfilho/dotnetcore_store.git",
+  "author": "Uraquitan Filho <uraquitan@syx.com.br>",
+  "license": "MIT",
+  "scripts": {
+    "start": "dotnet run -p ./src/Store.Web/Store.Web.csproj",
+    "migration": "cd ./src/Store.Data/ && dotnet ef --startup-project ../Store.Web/Store.Web.csproj migrations add",
+    "migration-script": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj migrations script",
+    "remove-migration": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj migrations remove",
+    "database-update": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj database update"
+  }
+}

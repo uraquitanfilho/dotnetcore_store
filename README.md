@@ -2191,3 +2191,34 @@ dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data
 
 dotnet build
 ```
+
+werwerwerwerwe
+
+* Script to run using yarn or npm. Go to folder **Store**
+
+``` 
+ yarn init -y
+ ```
+ * Edit package.json
+ ```
+ {
+  "name": "Store",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/uraquitanfilho/dotnetcore_store.git",
+  "author": "Uraquitan Filho <uraquitan@syx.com.br>",
+  "license": "MIT",
+  "scripts": {
+    "start": "dotnet run -p ./src/Store.Web/Store.Web.csproj",
+    "migration": "cd ./src/Store.Data/ && dotnet ef --startup-project ../Store.Web/Store.Web.csproj migrations add",
+    "migration-script": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj migrations script",
+    "remove-migration": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj migrations remove",
+    "database-update": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj database update"
+  }
+}
+ ```
+ > Now, to start the project dont need go to Store/src/Store.Web to type dotnet run
+ > Just need go to folder **Store** and type:
+ ```
+ yarn start
+ ```
