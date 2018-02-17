@@ -25,6 +25,7 @@ _:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press ent
 - [Settings-DI](#settings-di)
 - [Saving-Category](#saving-category)
 - [Form Validation](#form-validation)
+- [Domain Exception](#domain-exception)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -1293,3 +1294,231 @@ namespace Store.Domain.Products
     <script src="/js/jquery.validate.unobtrusive.js"></script>
 }
 ```
+## Domain Exception
+> **Commit** : []()
+
+* Create a new folder in the **Store.Web** called **Filters**
+* Create a class called: **Store.Web/Filters/CustomExceptionFilter.cs**
+
+```c
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Store.Domain;
+
+namespace Store.Web.Filters
+{
+    public class CustomExceptionFilter : ExceptionFilterAttribute
+    {
+    public override void OnException(ExceptionContext context) {
+            bool isAjaxCall = context.HttpContext.Request.Headers["x-requested-with"] == "XMLHttpRequest";
+
+            if(isAjaxCall) {
+                context.HttpContext.Response.ContentType = "application/json";
+                context.HttpContext.Response.StatusCode = 500;
+                var message = context.Exception is DomainException? context.Exception.Message : "An error occored";
+                context.Result = new JsonResult(message);
+                context.ExceptionHandled = true;
+            }
+
+            base.OnException(context);
+        }  
+    }
+}
+```
+* Edit **Store.Web/Startup.cs**
+
+
+```
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Store.DI;
+using Store.Domain;
+using Store.Web.Filters;
+
+namespace Store.Web
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            Bootstrap.Configure(services, Configuration.GetConnectionString("DefaultConnection"));
+
+            services.AddMvc(config => {
+                config.Filters.Add(typeof(CustomExceptionFilter));
+            });
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        {
+            app.Use(async(context, next) => 
+            {
+              await next.Invoke();
+              var unitOfWork = (IUnitOfWork)context.RequestServices.GetService(typeof(IUnitOfWork));
+              await unitOfWork.Commit();
+            });            
+            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+            loggerFactory.AddDebug();
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+            }
+
+            app.UseStaticFiles();
+
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Home}/{action=Index}/{id?}");
+            });
+        }
+    }
+}
+
+```
+* Edit **Store.Web/Views/Category/CreateOrEdit.cshtml**
+```c
+@model Store.Web.ViewsModels.CategoryViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row header">
+    <div class="co-md-12">
+        <h3>Category</h3>
+        <a href="/Category" class="btn btn-primary">Back</a>
+    </div>
+</div>
+<div class="row form-wrapper">
+    <div class="col-md-12">
+        <form id="form" class="form-horizontal" asp-action="CreateOrEdit" asp-controller="Category" asp-anti-forgery=""
+        data-ajax="true" data-ajax-method="POST" data-ajax-failure="formOnFail" data-ajax-success="window.location = '/Category'">
+            <input type="hidden" asp-for="Id">
+            <div class="form-group">
+                <label class="col-md-2 control-label">Name</label>
+                <div class="col-md-8">
+                    <input class="form-control" asp-for="Name">
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-8">
+                    <button class="btn btn-success">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts {
+    <script src="/js/jquery.validate.min.js"></script>
+    <script src="/js/jquery.validate.unobtrusive.js"></script>
+     <script src="/js/jquery.unobtrusive-ajax.min.js"></script>
+}
+```
+* Edit **Store.Web/Views/Shared/_Layout.cshtml**
+```c
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Store.Web</title>
+    <link rel="stylesheet" href="~/css/site.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+     
+</head>
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">Store.Web</a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li><a asp-area="" asp-controller="Home" asp-action="About">About</a></li>
+                    <li><a asp-area="" asp-controller="Home" asp-action="Contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; 2018 - Store.Web</p>
+        </footer>
+    </div>
+
+    <environment include="Development">
+        <script src="~/js/jquery.min.js"></script>
+        <script src="~/js/bootstrap.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment> 
+    <environment exclude="Development">
+        <script src="~/js/jquery.min.js"></script>
+        <script src="~/js/bootstrap.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script> 
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
+                asp-fallback-src="~/js/jquery.min.js"
+                asp-fallback-test="window.jQuery"
+                crossorigin="anonymous"
+                integrity="sha384-K+ctZQ+LL8q6tP7I94W+qzQsfRV2a+AfHIi9k8z8l9ggpc8X+Ytst4yBo/hH+8Fk">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"
+                asp-fallback-src="~/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+                crossorigin="anonymous"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
+        </script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+```
+Edit **wwwroot/js/site.js**
+```javascript
+function formOnFail(error){
+    if(error && error.status === 500) {
+        toastr.error("error.responseText");
+    }
+}
+```
+* use yarn to install the jquey-unobtrusive-ajax
+```javascript
+yarn add jquery-ajax-unobtrusive
+```
+* copy from node_modules and paste on the folder **wwwroot/js/jquery.unobtrusive-ajax.min.js**
+
+
