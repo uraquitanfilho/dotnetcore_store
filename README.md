@@ -27,6 +27,7 @@ _:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press ent
 - [Form Validation](#form-validation)
 - [Domain Exception](#domain-exception)
 - [Category Crud Finish](#category-crud-finish)
+- [Crud Product](#crud-product)
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
 > ## Let's create the project ## 
@@ -129,7 +130,7 @@ namespace Store.Domain.Products
 ```c
 namespace Store.Domain.Products
 {
-    public class Product
+    public class Product : Entity
     {
         public int Id { get; private set; }
         public string Name { get; private set; }
@@ -203,8 +204,6 @@ namespace Store.Domain
 8. Go to src/Store.Domain/Products and create a file called: **ProductStorer.cs**
 
 ```c
-using Store.Domain.Dtos;
-
 namespace Store.Domain.Products
 {
     public class ProductStorer
@@ -217,18 +216,18 @@ namespace Store.Domain.Products
             _categoryRepository = categoryRepository;
         }
 
-        public void Store(ProductDto dto) {
-            var category = _categoryRepository.GetById(dto.CategoryId);
+        public void Store(int id, string name, int categoryId, decimal price, int stockQuantity) {
+            var category = _categoryRepository.GetById(categoryId);
             DomainException.When(category == null, "Invalid Category");
 
-            var product = _productRepository.GetById(dto.Id);
+            var product = _productRepository.GetById(id);
             if(product == null)
             {
-                product = new Product(dto.Name, category, dto.Price, dto.StockQuantity);
+                product = new Product(name, category, price, stockQuantity);
                 _productRepository.Save(product);
             }
             else {
-                product.Update(dto.Name, category, dto.Price, dto.StockQuantity);
+                product.Update(name, category, price, stockQuantity);
             }
         }
     }
@@ -780,22 +779,27 @@ namespace Store.Domain
 ```c
 namespace Store.Domain.Products
 {
-    public class Category : Entity
+   public class Category : Entity
     {
-        public string Name { get; private set; }
+        public string Name {get; private set;}
+
+        protected Category(){}
 
         public Category(string name)
         {
-            ValidateAndSetName(name);
+            ValidateNameAndSetName(name);
         }
 
-        public void Update(string name) 
+        public void Update(string name)
         {
-            ValidateAndSetName(name);
+            ValidateNameAndSetName(name);
         }
-        private void ValidateAndSetName(string name)
+
+        private void ValidateNameAndSetName(string name)
         {
             DomainException.When(string.IsNullOrEmpty(name), "Name is required");
+            DomainException.When(name.Length < 3, "Name invalid");
+
             Name = name;
         }
     }
@@ -1154,32 +1158,7 @@ namespace Store.Web
 > **Commit** : []()
 > ## Let's resolve the CustomException ##
 
-* Edit **Store/src/Core.Domain/Category.cs** 
-```c
-namespace Store.Domain.Products
-{
-    public class Category : Entity
-    {
-        public string Name { get; private set; }
 
-        public Category(string name)
-        {
-            ValidateAndSetName(name);
-        }
-
-        public void Update(string name) 
-        {
-            ValidateAndSetName(name);
-        }
-        private void ValidateAndSetName(string name)
-        {
-            DomainException.When(string.IsNullOrEmpty(name), "Name is required");
-            DomainException.When(name.Length < 3, "Invalid Category");
-            Name = name;
-        }
-    }
-}
-```
 * Cut folder **Store/src/Core.Domain/Dtos** and paste in the **Core.Web** folder
 * Now, Remove Store/src/Core.Web/Dtos/CategoryDto.cs
 * Create a new folder inside Store.Web called **ViewsModels**
@@ -1522,7 +1501,7 @@ yarn add jquery-ajax-unobtrusive
 * copy from node_modules and paste on the folder **wwwroot/js/jquery.unobtrusive-ajax.min.js**
 
 ## Category Crud Finish
-> **Commit** : []()
+> **Commit** : [1adbdd5](https://github.com/uraquitanfilho/dotnetcore_store/tree/1adbdd57766fa328909e3c1eddfc1e4388f28010)
 
 * Edit **Controllers/CategoryController.cs**
 
@@ -1655,5 +1634,310 @@ namespace Store.Domain
     }
 }
 ```
+[](#crud-product)
+## Initial
+> **Commit** : []()
+
+* Create a Folder called **Product** in the Store.Web/Views
+* Create a file called **CreateOrEdit.cshtml** inside this new folder
+```html
+@model Store.Web.ViewsModels.ProductViewModel
+@using Store.Web.ViewsModels
+@{
+    ViewData["Title"] = "Category";
+}
+
+<div class="row header">
+    <div class="col-md-12">
+        <h3>Product</h3>
+        <a href="/Product" class="btn btn-primary">Back</a>
+    </div>
+</div>
+<div class="row form-wrapper">
+    <div class="col-md-12">
+        <form id="form" class="form-horizontal" asp-action="CreateOrEdit" asp-controller="Product" 
+            data-ajax="true" data-ajax-method="POST" data-ajax-failure="formOnFail" data-ajax-success="window.location = '/Product'"
+            asp-anti-forgery>
+            <input type="hidden" class="form-control" asp-for="Id" >
+            <div class="form-group">
+                <label class="col-md-2 control-label">Name</label>
+                <div class="col-md-8">
+                    <input type="text" class="form-control" asp-for="Name" >    
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Category</label>
+                <div class="col-md-2">
+                    <select class="form-control" asp-for="CategoryId" asp-items="@(new SelectList(@Model.Categories,"Id","Name"))">
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Price</label>
+                <div class="col-md-8">
+                    <input id="price" type="text" class="form-control" asp-for="Price" >
+                    <span asp-validation-for="Price" class="text-danger"></span>        
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Stock Quantity</label>
+                <div class="col-md-8">
+                    <input type="text" class="form-control" asp-for="StockQuantity" >
+                    <span asp-validation-for="StockQuantity" class="text-danger"></span>    
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-8">
+                    <button class="btn btn-success">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/jquery.validate.min.js"></script>
+    <script src="/js/jquery.validate.unobtrusive.js"></script>
+    <script src="/js/jquery.unobtrusive-ajax.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/autonumeric/2.0.0/autoNumeric.min.js"></script>
+    <script>
+        $(function(){
+            $('#price').autoNumeric('init');
+        });
+    </script>
+}
+```
+* create a cshtml file called: **Index.cshtml** in the folder **Store.Web/Views/Product**
+```c
+@model IEnumerable<Store.Web.ViewsModels.ProductViewModel>
+@{
+    ViewData["Title"] = "Product";
+}
+
+<div class="row header">
+    <div class="col-md-12">
+        <h3>Products</h3>
+        <a href="/Product/CreateOrEdit" class="btn btn-primary">New</a>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-hover">
+            <tbody>
+                @if(@Model != null)
+                {
+                    foreach(var viewModel in @Model)
+                    {
+                        <tr>
+                            <td>
+                                <a class="name">@viewModel.Name</a>
+                            </td>
+                            <td>
+                                <a class="name">@viewModel.CategoryName</a>
+                            </td>
+                            <td>
+                                <a href="/Product/CreateOrEdit/@viewModel.Id" class="btn">Edit</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+```
+
+* Create a new controller class called **ProductController.cs** in the folder **Store.Web/Controllers**
+
+```c
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain;
+using Store.Domain.Products;
+using Store.Web.ViewsModels;
+
+namespace Store.Web.Controllers
+{
+    public class ProductController : Controller
+    {
+        private readonly ProductStorer _productStorer;
+        private readonly IRepository<Category> _categoryRepository;
+        private readonly IRepository<Product> _productRepository;
+
+        public ProductController(
+          ProductStorer productStorer,
+          IRepository<Category> categoryRepository,
+          IRepository<Product> productRepository) 
+        {
+           _productStorer = productStorer;
+           _categoryRepository = categoryRepository;
+           _productRepository = productRepository;
+ 
+        }
+
+        public IActionResult Index() {
+            var products = _productRepository.All();
+            if(products.Any())
+            {
+                var viewsModels = products.Select(p => new ProductViewModel {
+                    Id = p.Id, 
+                    Name = p.Name, 
+                    CategoryName = p.Category.Name});
+                return View(viewsModels);
+            } else return View();
+        }
+
+        public IActionResult CreateOrEdit(int id) 
+        {
+           var viewModel = new ProductViewModel();
+           var categories = _categoryRepository.All();
+           if(categories.Any())
+             viewModel.Categories = categories.Select(c => new CategoryViewModel {Id = c.Id, Name = c.Name});
+
+           if(id > 0) {
+               var product = _productRepository.GetById(id);
+               viewModel.Id = product.Id;
+               viewModel.Name = product.Name;
+               viewModel.CategoryId = product.Category.Id;
+               viewModel.Price = product.Price;
+               viewModel.StockQuantity = product.StockQuantity;
+               return View(viewModel);
+           }
+           return View(viewModel);
+        }
+        [HttpPost]
+        public IActionResult CreateOrEdit(ProductViewModel vM) {
+            _productStorer.Store(vM.Id, vM.Name, vM.CategoryId, vM.Price, vM.StockQuantity);
+            return RedirectToAction("Index");
+        }
+    }
+}
+```
+* Create a new class called: **ProductViewModel.cs** in the folder: **Store.Web/ViewsModels**
+```c
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace Store.Web.ViewsModels
+{
+    public class ProductViewModel
+    {
+        public int Id { get; set; }
+        [Required]
+        public string Name { get; set; }
+        [Required]
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        [Required]
+        public decimal Price { get; set; }
+        [RegularExpression(@"^[0-9*$", ErrorMessage = "Invalid Stock Quantity")]
+        public int StockQuantity { get; set; }
+        public IEnumerable<CategoryViewModel> Categories {get; set;}
+    }
+}
+```
+* Let't do a litte refactory on the Store.Data.
+> Create a folder called **Repositories**
+* Move the the Class name **Repository.cs** to this new folder. After, create a new class called: **ProductRepository.cs**
+```c
+```
+* **Repository.cs Refactory**
+```c
+using System.Collections.Generic;
+using System.Linq;
+using Store.Data.Contexties;
+using Store.Domain;
+
+namespace Store.Data.Repositories
+{
+    public class Repository<TEntity> : IRepository<TEntity> where TEntity: Entity
+    {
+        protected readonly ApplicationDbContext _context;
+
+        public Repository(ApplicationDbContext context) {
+            _context = context;
+        }
+
+        public virtual IEnumerable<TEntity> All() {
+            return _context.Set<TEntity>().AsEnumerable();
+        }
+
+        public virtual TEntity GetById(int id) {
+           var query = _context.Set<TEntity>().Where(e => e.Id == id);
+           if(query.Any())
+             return query.First();
+           return null;  
+        }
+
+        public virtual void Save(TEntity entity) {
+           _context.Set<TEntity>().Add(entity);
+        }
+    }
+}
+```
+
+* Create a new folder called **Contexts** in the **Store.Data** folder
+> cut paste the file: **ApplicationDbContext.css** into this new folder
+_adjust other ApplicationDbContext's class dependencies to correct refactory_
+
+* Edit Store.Domain/Bootstrap.cs
+```c
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Domain;
+using Store.Domain.Products;
+using Store.Data;
+using Store.Data.Repositories;
+using Store.Data.Contexties;
+
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options =>
+              options.UseSqlServer(connection));
+            //Generic Injection
+            services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
+            services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(CategoryStorer));
+            services.AddSingleton(typeof(ProductStorer));
+            services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
+        }
+    }
+}
+
+* Edit the file **Store.Data/Contexties/ApplicationDbContext.cs**
+```c
+using Microsoft.EntityFrameworkCore;
+using Store.Domain.Products;
+
+namespace Store.Data.Contexties
+{
+    public class ApplicationDbContext : DbContext
+    {
+       public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {
+
+       }   
+
+       public DbSet<Category> Categories {get; set;}
+       public DbSet<Product> Products { get; set; }
+    }
+}
+```
 
 
+```
+* Let's Create the migrations to products
+> go to **Store.Data** folder and on the command prompt type:
+```
+dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data.csproj migrations add AddProduct
+
+dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data.csproj database update
+
+dotnet restore
+dotnet build
+```

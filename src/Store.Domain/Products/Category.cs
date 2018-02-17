@@ -1,22 +1,26 @@
 namespace Store.Domain.Products
 {
-    public class Category : Entity
+   public class Category : Entity
     {
-        public string Name { get; private set; }
+        public string Name {get; private set;}
+
+        protected Category(){}
 
         public Category(string name)
         {
-            ValidateAndSetName(name);
+            ValidateNameAndSetName(name);
         }
 
-        public void Update(string name) 
+        public void Update(string name)
         {
-            ValidateAndSetName(name);
+            ValidateNameAndSetName(name);
         }
-        private void ValidateAndSetName(string name)
+
+        private void ValidateNameAndSetName(string name)
         {
             DomainException.When(string.IsNullOrEmpty(name), "Name is required");
-            DomainException.When(name.Length < 3, "Invalid Category");
+            DomainException.When(name.Length < 3, "Name invalid");
+
             Name = name;
         }
     }
