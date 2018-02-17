@@ -1,3 +1,4 @@
 node_modules/
 .vscode/
 ./src/Store.Web/obj/Debug/
+./src/Store.DI/bin/Debug/

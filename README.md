@@ -1179,6 +1179,117 @@ namespace Store.Domain.Products
     }
 }
 ```
-* Edit Store/src/Core.Web/Dtos/CategoryDto.cs
+* Cut folder **Store/src/Core.Domain/Dtos** and paste in the **Core.Web** folder
+* Now, Remove Store/src/Core.Web/Dtos/CategoryDto.cs
+* Create a new folder inside Store.Web called **ViewsModels**
+* create a class called **CategoryViewModel.cs**
+```c
+using System.ComponentModel.DataAnnotations;
 
+namespace Store.Web.ViewsModels
+{
+    public class CategoryViewModel
+    {
+            public int Id {get; set;}
+            [Required]
+            public string Name {get; set;}
+    }
+}
+```
+* Edit **/Store.Domain/Products/CategoryStorer.cs**
+```
+namespace Store.Domain.Products
+{
+    public class CategoryStorer
+    {
+        private readonly IRepository<Category> _categoryRepository;
 
+        public CategoryStorer(IRepository<Category> categoryRepository)
+        {
+           _categoryRepository = categoryRepository;
+        }
+
+        public void Store(int id, string name) {
+            var category = _categoryRepository.GetById(id);
+
+            if(category == null) {
+                category = new Category(name);
+                _categoryRepository.Save(category);
+            }
+            else 
+              category.Update(name);
+        }  
+    }
+}
+```
+
+* Edit **/Store.Domain/Products/ProductStorer.cs**
+
+```
+namespace Store.Domain.Products
+{
+    public class ProductStorer
+    {
+        private readonly IRepository<Product> _productRepository;
+        private readonly IRepository<Category> _categoryRepository;
+
+        public ProductStorer(IRepository<Product> productRepository, IRepository<Category> categoryRepository) {
+            _productRepository = productRepository;
+            _categoryRepository = categoryRepository;
+        }
+
+        public void Store(int id, int categoryId, string name, decimal price, int stockQuantity) {
+            var category = _categoryRepository.GetById(categoryId);
+            DomainException.When(category == null, "Invalid Category");
+
+            var product = _productRepository.GetById(id);
+            if(product == null)
+            {
+                product = new Product(name, category, price, stockQuantity);
+                _productRepository.Save(product);
+            }
+            else {
+                product.Update(name, category, price, stockQuantity);
+            }
+        }
+    }
+}
+```
+* Edit **Store.Web/Views/Category/CreateOrEdit.cshtml**
+```c
+@model Store.Web.ViewsModels.CategoryViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row header">
+    <div class="co-md-12">
+        <h3>Category</h3>
+        <a href="/Category" class="btn btn-primary">Back</a>
+    </div>
+</div>
+<div class="row form-wrapper">
+    <div class="col-md-12">
+        <form id="form" class="form-horizontal" asp-action="CreateOrEdit" asp-controller="Category" asp-anti-forgery="">
+            <div class="form-group">
+                <label class="col-md-2 control-label">Name</label>
+                <div class="col-md-8">
+                    <input class="form-control" asp-for="Name">
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-8">
+                    <button class="btn btn-success">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts {
+    <script src="/js/jquery.validate.min.js"></script>
+    <script src="/js/jquery.validate.unobtrusive.js"></script>
+}
+```
