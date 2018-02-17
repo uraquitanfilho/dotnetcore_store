@@ -28,6 +28,8 @@ _:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press ent
 - [Domain Exception](#domain-exception)
 - [Category Crud Finish](#category-crud-finish)
 - [Crud Product](#crud-product)
+- [Sale](#sale)
+
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
 > ## Let's create the project ## 
@@ -1938,5 +1940,254 @@ dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data
 dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data.csproj database update
 
 dotnet restore
+dotnet build
+```
+
+## Sale
+> **Commit** : []()
+
+* create a class called: **Store.Web/Controllers/SaleController.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain;
+using Store.Domain.Products;
+using Store.Domain.Sales;
+using Store.Web.ViewsModels;
+
+namespace Store.Web.Controllers
+{
+    [Authorize]
+    public class SaleController : Controller
+    {
+        private readonly SaleFactory _saleFactory;
+        private readonly IRepository<Product> _productRepository;
+    
+
+        public SaleController(SaleFactory saleFactory, IRepository<Product> productRepository)
+        {
+            _saleFactory = saleFactory;
+            _productRepository = productRepository;
+        }
+        
+        public IActionResult Create()
+        {
+            var products = _productRepository.All();
+            
+            var productsViewModel = products.Select(c => new ProductViewModel{ Id = c.Id, Name = c.Name });
+            return View(new SaleViewModel{Products = productsViewModel});
+        }
+
+        [HttpPost]
+        public IActionResult Create(SaleViewModel viewModel)
+        {
+            _saleFactory.Create(viewModel.ClientName, viewModel.ProductId, viewModel.Quantity);
+            return Ok();
+        }
+    }
+}
+```
+* Create a new folder **Sale** in **Store.Web/Views** and a cshtml file called **Store.Web/View/Sale/Create.cshtml**
+```html
+@model Store.Web.ViewsModels.SaleViewModel
+@using Store.Web.ViewsModels
+@{
+    ViewData["Title"] = "Sale";
+}
+
+<div class="row header">
+    <div class="col-md-12">
+        <h3>Sales</h3>
+        <a href="/Sale/Create" class="btn btn-primary">New</a>
+    </div>
+</div>
+<div class="row form-wrapper">
+    <div class="col-md-12">
+        <form id="form" class="form-horizontal" asp-action="Create" asp-controller="Sale" 
+            data-ajax="true" data-ajax-method="POST" data-ajax-failure="formOnFail" data-ajax-success="window.location = '/Sale/Create'"
+            asp-anti-forgery>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Client Name</label>
+                <div class="col-md-8">
+                    <input type="text" class="form-control" asp-for="ClientName" >    
+                    <span asp-validation-for="ClientName" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Product</label>
+                <div class="col-md-2">
+                    <select id="product" class="form-control" asp-for="ProductId" asp-items="@(new SelectList(@Model.Products,"Id","Name"))">
+                        <option value="NoValue"></option>
+                    </select>
+                    <span class="text-danger" asp-validation-for="ProductId"></span>    
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Quantity</label>
+                <div class="col-md-8">
+                    <input id="quantity" type="text" class="form-control" asp-for="Quantity" >
+                    <span class="text-danger" asp-validation-for="Quantity"></span>    
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-8">
+                    <button class="btn btn-success">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/jquery.validate.min.js"></script>
+    <script src="/js/jquery.validate.unobtrusive.js"></script>
+    <script src="/js/jquery.unobtrusive-ajax.min.js"></script>
+}
+```
+
+* Create a class called **Store.Web/ViewsModels/SaleViewModel.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace Store.Web.ViewsModels
+{
+    public class SaleViewModel
+    {
+        [Required]
+        public string ClientName {get; set;}
+        [Required]
+        public int ProductId {get; set;}
+        [Required]
+        public int Quantity {get; set;}
+        public IEnumerable<ProductViewModel> Products { get; set; }
+    }
+}
+```
+* Edit **Core.DI/Bootstrap.cs**
+```c
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Domain;
+using Store.Domain.Products;
+using Store.Data;
+using Store.Data.Repositories;
+using Store.Data.Contexties;
+
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options =>
+              options.UseSqlServer(connection));
+            //Generic Injection
+            services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
+            services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(CategoryStorer));
+            services.AddSingleton(typeof(ProductStorer));
+             services.AddSingleton(typeof(SaleFactory));
+            services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
+        }
+    }
+}
+```
+* Create a Folder called **Sales** in the **Core.Domain**
+> Inside Sales folder, add 3 new classes
+1 . Sale.cs
+```c
+using System;
+using System.Collections.Generic;
+using Store.Domain.Products;
+
+namespace Store.Domain.Sales
+{
+    public class Sale : Entity
+    {
+        public string ClientName { get; private set; }
+        public DateTime CreatedOn { get; private set; }
+        public decimal Total { get; private set; }
+        public SaleItem Item { get; private set; }
+
+        public Sale(string clientname, Product product, int quantity)
+        {
+            DomainException.When(string.IsNullOrEmpty(clientname), "Client name is required");
+            Item = new SaleItem(product, quantity);
+            CreatedOn = DateTime.Now;
+            ClientName = clientname;
+        }
+    }
+}
+
+```
+2 . SaleFactory.cs
+```c
+using System;
+using System.Collections.Generic;
+using Store.Domain.Products;
+
+namespace Store.Domain.Sales
+{
+    public class SaleFactory
+    {
+        private readonly IRepository<Sale> _saleRepository;
+        private readonly IRepository<Product> _productRepository;
+
+        public SaleFactory(IRepository<Sale> saleRepository, IRepository<Product> productRepository)
+        {
+            _saleRepository = saleRepository;
+            _productRepository = productRepository;
+        }
+
+        public void Create(string clientName, int ProductId, int quantity)
+        {
+            var product = _productRepository.GetById(ProductId);
+            product.RemoveFromStock(quantity);
+
+            var sale = new Sale(clientName, product, quantity);
+            _saleRepository.Save(sale);
+        }
+    }
+}
+```
+2 . SaleItem.cs
+```c
+using Store.Domain.Products;
+
+namespace Store.Domain.Sales
+{
+    public class SaleItem : Entity
+    {
+        public Product Product { get; set; }
+        public decimal Price { get; set; }
+        public int Quantity { get; set; }
+        public decimal Total { get; set; }
+
+        public SaleItem(Product product, int quantity)
+        {
+            DomainException.When(product == null, "Product is required");
+            DomainException.When(quantity < 1, "Quanatity incorrect");
+                        
+            Product = product;
+            Price = Product.Price;
+            Quantity = quantity;
+            Total = Price * Quantity;
+        }
+    }
+}
+```
+* Let's generate the table Sales using the migration
+```
+dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data.csproj migrations add addSale
+
+dotnet ef --startup-project ../Store.Web/Store.Web.csproj --project ./Store.Data.csproj database update
+
 dotnet build
 ```

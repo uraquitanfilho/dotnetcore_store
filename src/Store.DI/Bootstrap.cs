@@ -6,6 +6,7 @@ using Store.Domain.Products;
 using Store.Data;
 using Store.Data.Repositories;
 using Store.Data.Contexties;
+using Store.Domain.Sales;
 
 namespace Store.DI
 {
@@ -20,6 +21,7 @@ namespace Store.DI
             services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
             services.AddSingleton(typeof(CategoryStorer));
             services.AddSingleton(typeof(ProductStorer));
+             services.AddSingleton(typeof(SaleFactory));
             services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
         }
     }

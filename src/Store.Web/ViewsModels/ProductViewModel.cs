@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Store.Web.ViewsModels
 {
-public class ProductViewModel
+    public class ProductViewModel
     {
         public int Id {get; set;}
         [Required]
