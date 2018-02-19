@@ -54,7 +54,7 @@ namespace Store.Web
             }
 
             app.UseStaticFiles();
-
+            app.UseIdentity();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(

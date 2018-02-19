@@ -15,14 +15,16 @@ namespace Store.Data.Repositories
         public override Product GetById(int id)
         {
             var query = _context.Set<Product>().Include(p => p.Category).Where(e => e.Id == id);
-            if (query.Any())
-               return query.First();
-            return null;   
+            if(query.Any())
+                return query.First();
+            return null;
         }
 
         public override IEnumerable<Product> All()
         {
-            return _context.Set<Product>().Include(p => p.Category).AsEnumerable();
+            var query = _context.Set<Product>().Include(p => p.Category);
+
+            return query.Any() ? query.ToList() : new List<Product>();
         }
     }
 }

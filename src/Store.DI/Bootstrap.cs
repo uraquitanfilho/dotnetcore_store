@@ -9,6 +9,7 @@ using Store.Data.Contexties;
 using Store.Domain.Sales;
 using Store.Data.Identity;
 using Microsoft.AspNetCore.Identity;
+using Store.Domain.Account;
 
 namespace Store.DI
 {
@@ -31,6 +32,7 @@ namespace Store.DI
             //Generic Injection
             services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
             services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(IAuthentication), typeof(Authentication)); 
             services.AddSingleton(typeof(CategoryStorer));
             services.AddSingleton(typeof(ProductStorer));
              services.AddSingleton(typeof(SaleFactory));

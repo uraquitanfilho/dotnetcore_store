@@ -1841,7 +1841,7 @@ namespace Store.Web.ViewsModels
 ```
 * Let't do a litte refactory on the Store.Data.
 > Create a folder called **Repositories**
-* Move the the Class name **Repository.cs** to this new folder. After, create a new class called: **ProductRepository.cs**
+* Move the Class name **Repository.cs** to this new folder. After, create a new class called: **ProductRepository.cs**
 ```c
 ```
 * **Repository.cs Refactory**
@@ -2488,3 +2488,163 @@ namespace Store.DI
 yarn migrations addIdentity
 yarn database-update
 
+> Let's create an Default Admin user
+
+* Go to **Store/src/Store.Data/Migrations** and create a file called **20180219092404_CreateUserAdmin.cs**
+
+```c
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Store.Data.Contexties;
+using System;
+using System.Collections.Generic;
+
+namespace Store.Data.Migrations
+{
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20180219092404_CreateUserAdmin")]
+    public partial class CreateUserAdmin : Migration
+    {
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Sql(@"insert into [dbo].[AspNetRoles] values ('BD2AF962-6AB3-4D28-A902-0A8511750AB1', null, 'Admin', 'Admin');
+                                insert into [dbo].[AspNetRoles] values ('813F9DB8-8601-4C82-BCE3-D122BC3E3AB9', null, 'Manager', 'Manager');
+                                insert into [dbo].[AspNetRoles] values ('F2493BA0-B8CA-4E97-A882-DEA90B9E1728', null, 'Operation', 'Operation');");
+            
+            //@Axsd12 
+            migrationBuilder.Sql(@"insert into [AspNetUsers] values
+                ('6d9a6ca2-9d24-4ca2-ad4b-6265a818d7d4', 0, '7beea230-7f9d-4cd5-970b-37e9fa8f4347', 'admin@admin.com', 0, 1, null, 'ADMIN@ADMIN.COM', 'ADMIN@ADMIN.COM', 'AQAAAAEAACcQAAAAEIIWoviAu641wICvbFTecu/e8tUNiQXxYQ9JaEUXLYmdcSrSS6OnOmJg1U6kxQgGbQ==', null, 0, 'cebc5f87-b136-4c12-8dff-7bb65d499f35', 0, 'admin@admin.com')");
+
+            migrationBuilder.Sql(@"insert into [AspNetUserRoles] values ('6d9a6ca2-9d24-4ca2-ad4b-6265a818d7d4', 'BD2AF962-6AB3-4D28-A902-0A8511750AB1')");            
+        }
+
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+           
+        }
+    }
+}
+
+```
+* Edit **Store/src/Store.Web/Startup.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Store.DI;
+using Store.Domain;
+using Store.Web.Filters;
+
+namespace Store.Web
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            Bootstrap.Configure(services, Configuration.GetConnectionString("DefaultConnection"));
+
+            services.AddMvc(config => {
+                config.Filters.Add(typeof(CustomExceptionFilter));
+            });
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        {
+            app.Use(async(context, next) => 
+            {
+              await next.Invoke();
+              var unitOfWork = (IUnitOfWork)context.RequestServices.GetService(typeof(IUnitOfWork));
+              await unitOfWork.Commit();
+            });            
+            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+            loggerFactory.AddDebug();
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+            }
+
+            app.UseStaticFiles();
+            app.UseIdentity();
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Home}/{action=Index}/{id?}");
+            });
+        }
+    }
+}
+
+```
+* Edit **Core/src/Store.DI/Bootstrap.cs**
+```c
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Domain;
+using Store.Domain.Products;
+using Store.Data;
+using Store.Data.Repositories;
+using Store.Data.Contexties;
+using Store.Domain.Sales;
+using Store.Data.Identity;
+using Microsoft.AspNetCore.Identity;
+using Store.Domain.Account;
+
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection));
+            services.AddIdentity<ApplicationUser, IdentityRole>(config => {
+
+                    config.Password.RequireDigit = false;
+                    config.Password.RequiredLength = 3;
+                    config.Password.RequireLowercase = false;
+                    config.Password.RequireNonAlphanumeric = false;
+                    config.Password.RequireUppercase = false;
+                    //config.Cookies.ApplicationCookie.LoginPath = "/Account/Login";
+                })
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+            //Generic Injection
+            services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
+            services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(IAuthentication), typeof(Authentication)); 
+            services.AddSingleton(typeof(CategoryStorer));
+            services.AddSingleton(typeof(ProductStorer));
+             services.AddSingleton(typeof(SaleFactory));
+            services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
+        }
+    }
+}
+
+```
+> Now let's do a build and RUN the project to test login
+```
+dotnet build
+yarn start
+```

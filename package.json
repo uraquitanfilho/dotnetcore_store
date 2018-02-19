@@ -8,8 +8,8 @@
   "scripts": {
     "start": "dotnet run -p ./src/Store.Web/Store.Web.csproj",
     "migration": "cd ./src/Store.Data/ && dotnet ef --startup-project ../Store.Web/Store.Web.csproj migrations add",
-    "migration-script": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj migrations script",
-    "remove-migration": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj migrations remove",
-    "database-update": "cd ./src/Store.Data/ && dotnet ef --startup-project ../store.web/Store.Web.csproj database update"
+    "migration-script": "cd ./src/Store.Data/ && dotnet ef --startup-project ../Store.Web/Store.Web.csproj migrations script",
+    "remove-migration": "cd ./src/Store.Data/ && dotnet ef --startup-project ../Store.Web/Store.Web.csproj migrations remove",
+    "database-update": "cd ./src/Store.Data/ && dotnet ef --startup-project ../Store.Web/Store.Web.csproj database update"
   }
 }
