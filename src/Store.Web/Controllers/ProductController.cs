@@ -1,4 +1,5 @@
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Store.Domain;
 using Store.Domain.Products;
@@ -6,6 +7,7 @@ using Store.Web.ViewsModels;
 
 namespace Store.Web.Controllers
 {
+    [Authorize]
     public class ProductController : Controller
     {
         private readonly ProductStorer _productStorer;

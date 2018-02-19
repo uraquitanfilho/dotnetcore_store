@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace StoreOfBuild.Web.Controllers
 {
-   // [Authorize]
+    [Authorize]
     public class HomeController : Controller
     {
         public IActionResult Index()

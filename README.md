@@ -29,13 +29,14 @@ _:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press ent
 - [Category Crud Finish](#category-crud-finish)
 - [Crud Product](#crud-product)
 - [Sale](#sale)
+- [Authentication](#authentication)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
 > ## Let's create the project ## 
 
 _Project Name_: _**Store**_
-___
+
 1. Create the folder:
 ``` 
   mkdir Store\src
@@ -2222,3 +2223,268 @@ werwerwerwerwe
  ```
  yarn start
  ```
+ ## Authentication
+> **Commit** : []()
+
+* Create a new folder called: **Identity** in the folder **Store/src/Store.Data**
+* Inside this folder add a new class called : **ApplicationUser.cs**
+```c
+using Microsoft.AspNetCore.Identity;
+
+namespace Store.Data.Identity
+{
+    public class ApplicationUser : IdentityUser
+    {
+        
+    }
+}
+```
+* Edit **Store/src/Store.Data/Store.Data.csproj**
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Store.Domain\Store.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="2.0.1" />   
+  </ItemGroup>
+
+  <ItemGroup>
+    <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+</Project>
+
+```
+* Edit **Store/src/Store.Data/Context/ApplicationDbContext.cs**
+```c
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Store.Data.Identity;
+using Store.Domain.Products;
+using Store.Domain.Sales;
+
+namespace Store.Data.Contexties
+{
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    {
+       public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {
+
+       }   
+
+       public DbSet<Category> Categories {get; set;}
+       public DbSet<Product> Products { get; set; }
+
+       public DbSet<Sale> Sales { get; set; }
+    }
+}
+```
+> Now let's create the controller
+* Create a new class called: **LoginViewModel.cs** in the folder **Core/src/Core.Web/ViewsModels**
+```c
+using System.ComponentModel.DataAnnotations;
+
+namespace Store.Web.ViewsModels
+{
+    public class LoginViewModel
+    {
+        [Required]
+        public string Email { get; set; }
+        [Required]
+        public string Password { get; set; }
+    }
+}
+```
+* Create a new class called: **Authentication.cs** in the folder: **Store/src/Core.Data/Identity**
+```c
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Store.Domain.Account;
+
+namespace Store.Data.Identity
+{
+    public class Authentication : IAuthentication
+    {
+        private readonly SignInManager<ApplicationUser> _signInManager;
+
+        public Authentication(SignInManager<ApplicationUser> signInManager)
+        {
+            _signInManager = signInManager;
+        }
+
+        public async Task<bool> Authenticate(string email, string password)
+        {
+            var result = await _signInManager.PasswordSignInAsync(email, password, false, lockoutOnFailure:false);
+            return result.Succeeded;
+        }
+    }
+}
+```
+> The Web class can not to have direct access to the Authentication.cs so, let's create the interface **IAuthentication.cs** in the **Core/src/Core.Domain
+* First, create a new folder **Account** 
+* IAuthentication.cs source
+```c
+using System.Threading.Tasks;
+
+namespace Store.Domain.Account
+{
+    public interface IAuthentication
+    {
+         Task<bool> Authenticate(string email, string password);
+    }
+}
+```
+* Create the class **Core/src/Core.Web/Controllers/AccountController.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain;
+using Store.Domain.Account;
+using Store.Domain.Products;
+using Store.Web.ViewsModels;
+
+namespace Store.Web.Controllers
+{
+    public class AccountController : Controller
+    {
+        private readonly IAuthentication _authentication;
+
+        public AccountController(IAuthentication authentication)  
+        {
+           _authentication = authentication;
+        }
+
+        public IActionResult Login() 
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            var result = await _authentication.Authenticate(model.Email, model.Password);
+            if(result) return Redirect("/");
+            else 
+            {
+                ModelState.AddModelError(string.Empty, "Invalid Login attempt.");
+                return View(model);
+            }
+        }
+    }
+}
+```
+* Create a new folder **Core/src/Core.Web/Views/Account**
+* Create a new cshtml file inside this new folder **Login.cshtml**
+```html
+@model Store.Web.ViewsModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<h2>@ViewData["Title"].</h2>
+<div class="row">
+    <div class="col-md-8">
+        <section>
+            <form asp-controller="Account" asp-action="Login" method="post" class="form-horizontal">
+                <h1>Make login.</h4>
+                <hr />
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div class="form-group">
+                    <label asp-for="Email" class="col-md-2 control-label"></label>
+                    <div class="col-md-10">
+                        <input asp-for="Email" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Password" class="col-md-2 control-label"></label>
+                    <div class="col-md-10">
+                        <input asp-for="Password" class="form-control" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button type="submit" class="btn btn-default">Log in</button>
+                    </div>
+                </div>
+                <p>
+                    <a asp-action="Register" asp-route-returnurl="@ViewData["ReturnUrl"]">Register as a new user?</a>
+                </p>
+                <p>
+                    <a asp-action="ForgotPassword">Forgot your password?</a>
+                </p>
+            </form>
+        </section>
+    </div>
+</div>
+
+```
+* Go to controllers to add the tag **[Authorize]** before the class name from the class:
+> CategoryController.cs
+> HomeController.cs
+> ProductController.cs
+> SaleController.cs
+
+* Now let's config the **Core/src/Core.DI/Bootstrap.cs**
+```c
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Domain;
+using Store.Domain.Products;
+using Store.Data;
+using Store.Data.Repositories;
+using Store.Data.Contexties;
+using Store.Domain.Sales;
+using Store.Data.Identity;
+using Microsoft.AspNetCore.Identity;
+
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection));
+            services.AddIdentity<ApplicationUser, IdentityRole>(config => {
+
+                    config.Password.RequireDigit = false;
+                    config.Password.RequiredLength = 3;
+                    config.Password.RequireLowercase = false;
+                    config.Password.RequireNonAlphanumeric = false;
+                    config.Password.RequireUppercase = false;
+                    config.Cookies.ApplicationCookie.LoginPath = "/Account/Login";
+                })
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+            //Generic Injection
+            services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
+            services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(CategoryStorer));
+            services.AddSingleton(typeof(ProductStorer));
+             services.AddSingleton(typeof(SaleFactory));
+            services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
+        }
+    }
+}
+
+```
+* Let's do the migration
+```
+yarn migrations addIdentity
+yarn database-update
+

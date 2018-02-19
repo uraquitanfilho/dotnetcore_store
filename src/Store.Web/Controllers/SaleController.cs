@@ -11,7 +11,7 @@ using Store.Web.ViewsModels;
 
 namespace Store.Web.Controllers
 {
-    //[Authorize]
+    [Authorize]
     public class SaleController : Controller
     {
         private readonly SaleFactory _saleFactory;

@@ -7,6 +7,8 @@ using Store.Data;
 using Store.Data.Repositories;
 using Store.Data.Contexties;
 using Store.Domain.Sales;
+using Store.Data.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace Store.DI
 {
@@ -14,8 +16,18 @@ namespace Store.DI
     {
         public static void Configure(IServiceCollection services, string connection) 
         {
-            services.AddDbContext<ApplicationDbContext>(options =>
-              options.UseSqlServer(connection));
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection));
+            services.AddIdentity<ApplicationUser, IdentityRole>(config => {
+
+                    config.Password.RequireDigit = false;
+                    config.Password.RequiredLength = 3;
+                    config.Password.RequireLowercase = false;
+                    config.Password.RequireNonAlphanumeric = false;
+                    config.Password.RequireUppercase = false;
+                    //config.Cookies.ApplicationCookie.LoginPath = "/Account/Login";
+                })
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
             //Generic Injection
             services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
             services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  

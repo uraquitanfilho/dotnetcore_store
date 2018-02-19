@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Store.Domain;
 using Store.Domain.Products;
@@ -9,7 +10,7 @@ using Store.Domain.Products;
 using Store.Web.ViewsModels;
 
 namespace Store.Web.Controllers
-{
+{ [Authorize]
     public class CategoryController : Controller
     {
         private readonly CategoryStorer _categoryStorer;
