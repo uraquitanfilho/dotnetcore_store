@@ -2650,7 +2650,7 @@ dotnet build
 yarn start
 ```
 ## User Form
-> **Commit** : []()
+> **Commit** : [b01739f](https://github.com/uraquitanfilho/dotnetcore_store/tree/b01739fbd4e0a37ba15cf5370dcf70716467fba5)
 
 * Create a class **Store/src/Store.Data/Identity/Manager.cs**
 ```c
