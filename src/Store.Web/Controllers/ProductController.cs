@@ -7,7 +7,7 @@ using Store.Web.ViewsModels;
 
 namespace Store.Web.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin, Manager")]
     public class ProductController : Controller
     {
         private readonly ProductStorer _productStorer;

@@ -33,9 +33,10 @@ namespace Store.DI
             services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
             services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
             services.AddSingleton(typeof(IAuthentication), typeof(Authentication)); 
+            services.AddSingleton(typeof(IManager), typeof(Manager)); 
             services.AddSingleton(typeof(CategoryStorer));
             services.AddSingleton(typeof(ProductStorer));
-             services.AddSingleton(typeof(SaleFactory));
+            services.AddSingleton(typeof(SaleFactory));
             services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
         }
     }

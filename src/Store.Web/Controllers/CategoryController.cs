@@ -10,7 +10,7 @@ using Store.Domain.Products;
 using Store.Web.ViewsModels;
 
 namespace Store.Web.Controllers
-{ [Authorize]
+{ [Authorize(Roles = "Admin, Manager")]
     public class CategoryController : Controller
     {
         private readonly CategoryStorer _categoryStorer;

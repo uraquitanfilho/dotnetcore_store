@@ -30,6 +30,7 @@ _:Launch VS Code Quick Open (Ctrl+P), paste the following command, and press ent
 - [Crud Product](#crud-product)
 - [Sale](#sale)
 - [Authentication](#authentication)
+- [User Form](#userform)
 
 ## Initial
 > **Commit** : [31dc559](https://github.com/uraquitanfilho/dotnetcore_store/tree/31dc5599ee52d4e30f9959538079dca983e1682a)
@@ -2224,7 +2225,7 @@ werwerwerwerwe
  yarn start
  ```
  ## Authentication
-> **Commit** : []()
+> **Commit** : [fdb3dd5](https://github.com/uraquitanfilho/dotnetcore_store/tree/fdb3dd523db836112001b66c571ceae79645553d)
 
 * Create a new folder called: **Identity** in the folder **Store/src/Store.Data**
 * Inside this folder add a new class called : **ApplicationUser.cs**
@@ -2647,4 +2648,473 @@ namespace Store.DI
 ```
 dotnet build
 yarn start
+```
+## User Form
+> **Commit** : []()
+
+* Create a class **Store/src/Store.Data/Identity/Manager.cs**
+```c
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Store.Data.Contexties;
+using Store.Domain.Account;
+using StoreOfBuild.Domain.Account;
+
+namespace Store.Data.Identity
+{
+        public class Manager : IManager
+    {
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ApplicationDbContext _dbContext;
+
+        public Manager(
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
+            ApplicationDbContext dbContext)
+        {
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _dbContext = dbContext;    
+        }
+
+        public async Task<bool> CreateAsync(string email, string password, string role)
+        {
+            var user = new ApplicationUser { UserName = email, Email = email};
+            var result = await _userManager.CreateAsync(user, password);
+
+            if(result.Succeeded)
+            {    
+                await _userManager.AddToRoleAsync(user, role);
+                return true;
+            }
+
+            return false;
+        }
+
+        public List<IUser> ListAll(){
+
+            var users = _dbContext.Users;
+
+            return users.Any() ? users.Select(u => (IUser)u).ToList() : new List<IUser>();
+        }
+    }
+}
+```
+> Create a new controller **Store/src/Store.Web/Controllers/UserController.cs**
+```c
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain.Account;
+using Store.Web.ViewsModels;
+
+namespace Store.Web.Controllers
+{
+  [Authorize(Roles = "Admin, Manager")]
+    public class UserController : Controller
+    {
+        private readonly IManager _manager;
+
+        public UserController(IManager manager){
+
+            _manager = manager;
+        }
+
+        public IActionResult Index()
+        {
+            var users = _manager.ListAll();
+            var usersViewModel = users.Select(u => new UserViewModel{Id = u.Id, Email = u.Email});
+            return View(usersViewModel);
+        }
+
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(UserViewModel viewModel)
+        {
+            await _manager.CreateAsync(viewModel.Email, viewModel.Password, viewModel.Role);
+            return Ok();
+        }
+    }
+}
+```
+
+* Create a new ViewModel : **Store/src/Store.Web/ModelsViews/UserModel.cs**
+```c
+using System.ComponentModel.DataAnnotations;
+
+namespace Store.Web.ViewsModels
+{
+    public class UserViewModel
+    {
+        public string Id { get; set; }
+        [Required]
+        public string Email {get; set;}
+        [Required]
+        public string Password { get; set; }
+        [Required]
+        public string Role { get; set; }
+    }
+}
+```
+
+* Create an Interface **/Store/src/Store.Domain/Account/IManager.cs**
+```c
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using StoreOfBuild.Domain.Account;
+
+namespace Store.Domain.Account
+{
+    public interface IManager
+    {
+      Task<bool> CreateAsync(string email, string password, string role);
+      List<IUser> ListAll();
+    }
+}
+```
+* Edit **Store/src/Store.Data/Identity/ApplicationUser.cs**
+```c
+using Microsoft.AspNetCore.Identity;
+using StoreOfBuild.Domain.Account;
+
+namespace Store.Data.Identity
+{
+    public class ApplicationUser : IdentityUser, IUser
+    {
+        
+    }
+}
+```
+
+* Create a new folder **Store/src/Store.Web/Views/User**
+
+* Create 2 cshtml file
+
+> **Create.cshtml**
+```html
+@model Store.Web.ViewsModels.UserViewModel
+@{
+    ViewData["Title"] = "User";
+}
+
+<div class="row header">
+    <div class="col-md-12">
+        <h3>User</h3>
+        <a href="/User" class="btn btn-primary">Back</a>
+    </div>
+</div>
+<div class="row form-wrapper">
+    <div class="col-md-12">
+        <form id="form" class="form-horizontal" asp-action="Create" asp-controller="User"
+            data-ajax="true" data-ajax-method="POST" data-ajax-failure="formOnFail" data-ajax-success="window.location = '/User'"
+            asp-anti-forgery>
+            <input type="hidden" class="form-control" asp-for="Id" >
+            <div class="form-group">
+                <label class="col-md-2 control-label">Email</label>
+                <div class="col-md-8">
+                    <input type="text" class="form-control" asp-for="Email">    
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Password</label>
+                <div class="col-md-8">
+                    <input type="text" class="form-control" asp-for="Password">    
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">Role</label>
+                <div class="col-md-2">
+                    <select class="form-control" asp-for="Role">
+                        <option></option>
+                        <option value="Manager">Manager</option>
+                        <option value="Operation">Operation</option>
+                    </select>
+                    
+                    <span asp-validation-for="Role" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-8">
+                    <button class="btn btn-success">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/jquery.validate.min.js"></script>
+    <script src="/js/jquery.validate.unobtrusive.js"></script>
+    <script src="/js/jquery.unobtrusive-ajax.min.js"></script>
+}
+```
+> **Index.cshtml**
+```html
+@model IEnumerable<Store.Web.ViewsModels.UserViewModel>
+@{
+    ViewData["Title"] = "User";
+}
+
+<div class="row header">
+    <div class="col-md-12">
+        <h3>Users</h3>
+        <a href="/User/Create" class="btn btn-primary">New</a>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-hover">
+            <tbody>
+                @if(@Model != null)
+                {
+                    foreach(var viewModel in @Model)
+                    {
+                        <tr>
+                            <td>
+                                <a class="name">@viewModel.Email</a>
+                            </td>
+                            <td>
+                                <a href="/User/ChangePassword/@viewModel.Id" class="btn">Change password</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+```
+
+* Edit **Store/src/Store.Web/Shared/_Layout.cshtml**
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Store.Web</title>
+    <link rel="stylesheet" href="~/css/site.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+     
+</head>
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">Store.Web</a>
+            </div>
+            <div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+                    <li><a asp-area="" asp-controller="User" asp-action="Index">User</a></li>
+                    <li><a asp-area="" asp-controller="Product" asp-action="Index">Product</a></li>
+                    <li><a asp-area="" asp-controller="Category" asp-action="Index">Category</a></li>
+                    <li><a asp-area="" asp-controller="Sale" asp-action="Create">Sale</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/Account/Logout" type="submit" class="btn btn-link navbar-btn navbar-link">Log out</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; 2018 - Store.Web</p>
+        </footer>
+    </div>
+
+    <environment include="Development">
+        <script src="~/js/jquery.min.js"></script>
+        <script src="~/js/bootstrap.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment> 
+    <environment exclude="Development">
+        <script src="~/js/jquery.min.js"></script>
+        <script src="~/js/bootstrap.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script> 
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
+                asp-fallback-src="~/js/jquery.min.js"
+                asp-fallback-test="window.jQuery"
+                crossorigin="anonymous"
+                integrity="sha384-K+ctZQ+LL8q6tP7I94W+qzQsfRV2a+AfHIi9k8z8l9ggpc8X+Ytst4yBo/hH+8Fk">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"
+                asp-fallback-src="~/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+                crossorigin="anonymous"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
+        </script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+
+```
+* Edit **Store/src/Store/Store.Web/Controllers/AccountController.cs**
+```c
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Store.Domain;
+using Store.Domain.Account;
+using Store.Domain.Products;
+using Store.Web.ViewsModels;
+
+namespace Store.Web.Controllers
+{
+    public class AccountController : Controller
+    {
+        private readonly IAuthentication _authentication;
+
+        public AccountController(IAuthentication authentication)  
+        {
+           _authentication = authentication;
+        }
+
+        public IActionResult Login() 
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            var result = await _authentication.Authenticate(model.Email, model.Password);
+            if(result) return Redirect("/");
+            else 
+            {
+                ModelState.AddModelError(string.Empty, "Invalid Login attempt.");
+                return View(model);
+            }
+        }
+        public async Task<IActionResult> Logout()
+        {
+            await _authentication.Logout();
+            return Redirect("/Account/Login");
+        }
+
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+    }
+}
+```
+* Edit **Store/src/Store.Data/Identity/Authentication.cs**
+
+```c
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Store.Domain.Account;
+
+namespace Store.Data.Identity
+{
+    public class Authentication : IAuthentication
+    {
+        private readonly SignInManager<ApplicationUser> _signInManager;
+
+        public Authentication(SignInManager<ApplicationUser> signInManager)
+        {
+            _signInManager = signInManager;
+        }
+
+        public async Task<bool> Authenticate(string email, string password)
+        {
+            var result = await _signInManager.PasswordSignInAsync(email, password, false, lockoutOnFailure:false);
+            return result.Succeeded;
+        }
+        public async Task Logout()
+        {
+            await _signInManager.SignOutAsync();
+        }
+    }
+}
+```
+* Edit **Store/src/Store.Domain/IAuthentication.cs**
+```c
+using System.Threading.Tasks;
+
+namespace Store.Domain.Account
+{
+    public interface IAuthentication
+    {
+         Task<bool> Authenticate(string email, string password);
+         Task Logout();
+    }
+}
+```
+* Edit **Store/src/Store.DI/Bootstrap.cs**
+```c
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Store.Domain;
+using Store.Domain.Products;
+using Store.Data;
+using Store.Data.Repositories;
+using Store.Data.Contexties;
+using Store.Domain.Sales;
+using Store.Data.Identity;
+using Microsoft.AspNetCore.Identity;
+using Store.Domain.Account;
+
+namespace Store.DI
+{
+    public class Bootstrap
+    {
+        public static void Configure(IServiceCollection services, string connection) 
+        {
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection));
+            services.AddIdentity<ApplicationUser, IdentityRole>(config => {
+
+                    config.Password.RequireDigit = false;
+                    config.Password.RequiredLength = 3;
+                    config.Password.RequireLowercase = false;
+                    config.Password.RequireNonAlphanumeric = false;
+                    config.Password.RequireUppercase = false;
+                    //config.Cookies.ApplicationCookie.LoginPath = "/Account/Login";
+                })
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+            //Generic Injection
+            services.AddSingleton(typeof(IRepository<Product>), typeof(ProductRepository));
+            services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));  
+            services.AddSingleton(typeof(IAuthentication), typeof(Authentication)); 
+            services.AddSingleton(typeof(IManager), typeof(Manager)); 
+            services.AddSingleton(typeof(CategoryStorer));
+            services.AddSingleton(typeof(ProductStorer));
+            services.AddSingleton(typeof(SaleFactory));
+            services.AddSingleton(typeof(IUnitOfWork), typeof(UnitOfWork));
+        }
+    }
+}
+
+```
+* Create a cshtml page : **Store/src/Store.Web/Views/Account/AccessDenied.cshtml**
+
+```html
+<p>Access denied</p>
 ```
